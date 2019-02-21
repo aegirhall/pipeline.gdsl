@@ -70,7 +70,6 @@ contributor(closures) {
         method(name: 'echo', type: 'Object', params: [message: 'java.lang.String'], doc: 'Print Message')
         method(name: 'stages', type: 'Object', params: [body: 'Closure'], doc: 'Stages')
         method(name: 'agent', type: 'Object', params: [body: 'Closure'], doc: 'Label expression to select agents')
-
         method(name: 'parameters', type: 'Object', params: [body: 'Closure'], doc: 'Job parameters')
         method(name: 'options', type: 'Object', params: [body: 'Closure'])
         method(name: 'triggers', type: 'Object', params: [body: 'Closure'], doc: 'Build triggers')
@@ -169,25 +168,28 @@ contributor(closures) {
         method(name: 'stage', type: 'Object', params: [body: Closure], namedParams: [parameter(name: 'name', type: 'java.lang.String'), parameter(name: 'concurrency', type: 'java.lang.Integer'),], doc: 'Stage')
     }
 
-    // When conditions
-    if (enclosingCall("when")) {
-        method(name: 'anyOf', type: 'Object', params: [body: 'Closure'])
-        method(name: 'branch', type: 'Object', params: [expr: 'String'])
-        method(name: 'expression', type: 'Object', params: [body: 'Closure'])
-    }
-
-    // Inside steps only steps
+    // Inside stage only steps
     if (enclosingCall("stage")) {
         method(name: 'agent', type: 'Object', params: [body: 'Closure'], doc: 'Label expression to select agents')
         method(name: 'steps', type: 'Object', params: [body: 'Closure'], doc: 'Steps to execute on stage')
-        method(name: 'when', type: 'Object', params: [body: 'Closure'], doc: 'When expression')
         method(name: 'post', type: 'Object', params: [body: 'Closure'], doc: 'Post actions can be executed on a per-stage basis as well')
-        method(name: 'parallel', type: 'Object', params: [body: 'Closure'], doc: 'Run task in parallel')
+        method(name: 'when', type: 'Object', params: [body: 'Closure'], doc: 'Determine pipeline execution depending on given condition')
+        method(name: 'parallel', type: 'Object', params: [body: 'Closure'], doc: 'Run tasks in parallel')
+        method(name: 'failFast', type: 'Object', params: [expr: 'Boolean'], doc: 'Fail parallel process fast')
+    }
+
+    // When conditions
+    if (enclosingCall("when")) {
+        method(name: 'allOf', type: 'Object', params: [body: 'Closure'], doc: 'Execute the stage when all of the nested conditions are true')
+        method(name: 'anyOf', type: 'Object', params: [body: 'Closure'], doc: 'Execute the stage when at least one of the nested conditions is true')
+        method(name: 'branch', type: 'Object', params: [expr: 'String'])
+        method(name: 'expression', type: 'Object', params: [body: 'Closure'], doc: 'Execute the stage when the specified Groovy expression evaluates to true')
+        method(name: 'not', type: 'Object', params: [body: 'Closure'], doc: 'Execute the stage when the nested condition is false')
     }
 
     // Only inside steps
     if (enclosingCall("steps") || enclosingCall("always") || enclosingCall("success") ||
-        enclosingCall("failure") || enclosingCall("unstable") || enclosingCall("changed")) {
+            enclosingCall("failure") || enclosingCall("unstable") || enclosingCall("changed")) {
         method(name: 'timestamp', type: 'Object', params: [body: 'Closure'], doc: 'Timestamps')
         method(name: 'bat', type: 'Object', params: [script: 'java.lang.String'], doc: 'Windows Batch Script')
         method(name: 'bat', type: 'Object', namedParams: [parameter(name: 'script', type: 'java.lang.String'), parameter(name: 'encoding', type: 'java.lang.String'), parameter(name: 'returnStatus', type: 'boolean'), parameter(name: 'returnStdout', type: 'boolean'),], doc: 'Windows Batch Script')
