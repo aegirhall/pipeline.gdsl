@@ -70,6 +70,7 @@ contributor(closures) {
         method(name: 'echo', type: 'Object', params: [message: 'java.lang.String'], doc: 'Print Message')
         method(name: 'stages', type: 'Object', params: [body: 'Closure'], doc: 'Stages')
         method(name: 'agent', type: 'Object', params: [body: 'Closure'], doc: 'Label expression to select agents')
+
         method(name: 'parameters', type: 'Object', params: [body: 'Closure'], doc: 'Job parameters')
         method(name: 'options', type: 'Object', params: [body: 'Closure'])
         method(name: 'triggers', type: 'Object', params: [body: 'Closure'], doc: 'Build triggers')
@@ -125,6 +126,12 @@ contributor(closures) {
         property(name: 'none')
         method(name: 'label', type: 'String', params: [expr: 'String'])
         method(name: 'docker', type: 'String', params: [docker_image: 'String'])
+        method(name: 'docker', type: 'Object', params: [body: 'Closure'])
+        if (enclosingCall("docker")) {
+            method(name: 'image', type: 'String', params: [expr: 'String'])
+            method(name: 'label', type: 'String', params: [expr: 'String'])
+            method(name: 'alwaysPull', type: 'boolean')
+        }
         method(name: 'dockerfile', type: 'boolean', params: [use_dockerfile: 'boolean'])
     }
 
@@ -138,13 +145,20 @@ contributor(closures) {
     // Parameters can only contain
     if (enclosingCall("parameters")) {
         method(name: 'string', type: 'Object', namedParams: [parameter(name: 'name', type: 'java.lang.String'), parameter(name: 'defaultValue', type: 'java.lang.String'), parameter(name: 'description', type: 'java.lang.String')])
+        method(name: 'password', type: 'Object', namedParams: [parameter(name: 'name', type: 'java.lang.String'), parameter(name: 'defaultValue', type: 'java.lang.String'), parameter(name: 'description', type: 'java.lang.String')])
         method(name: 'booleanParam', type: 'Object', namedParams: [parameter(name: 'name', type: 'java.lang.String'), parameter(name: 'defaultValue', type: 'java.lang.Boolean'), parameter(name: 'description', type: 'java.lang.String')])
         method(name: 'choice', type: 'Object', namedParams: [parameter(name: 'choice', type: 'java.lang.String'), parameter(name: 'defaultValue', type: 'java.lang.Boolean'), parameter(name: 'description', type: 'java.lang.String')])
     }
 
     // Find the options!
     if (enclosingCall("options")) {
-        method(name: 'buildDiscarder')
+        method(name: 'authorizationMatrix', type: 'Object')
+        method(name: 'ansiColor', type: 'String', params: [expr: 'String'], doc: 'colorize console')
+        method(name: 'buildDiscarder', type: 'Object', params: [body: 'Closure'], doc: 'discard build')
+        if (enclosingCall("buildDiscarder")) {
+            method(name: 'logRotator', type: 'Object', namedParams: [parameter(name: 'numToKeepStr', type: 'java.lang.String'), parameter(name: 'artifactNumToKeepStr', type: 'java.lang.String')] )
+        }
+        method(name: 'retry')
         method(name: 'timestamps')
         method(name: 'timeout', type: 'Object', namedParams: [parameter(name: 'time', type: 'java.lang.Integer'), parameter(name: 'unit', type: 'java.lang.String')])
     }
@@ -155,16 +169,25 @@ contributor(closures) {
         method(name: 'stage', type: 'Object', params: [body: Closure], namedParams: [parameter(name: 'name', type: 'java.lang.String'), parameter(name: 'concurrency', type: 'java.lang.Integer'),], doc: 'Stage')
     }
 
+    // When conditions
+    if (enclosingCall("when")) {
+        method(name: 'anyOf', type: 'Object', params: [body: 'Closure'])
+        method(name: 'branch', type: 'Object', params: [expr: 'String'])
+        method(name: 'expression', type: 'Object', params: [body: 'Closure'])
+    }
+
     // Inside steps only steps
     if (enclosingCall("stage")) {
         method(name: 'agent', type: 'Object', params: [body: 'Closure'], doc: 'Label expression to select agents')
         method(name: 'steps', type: 'Object', params: [body: 'Closure'], doc: 'Steps to execute on stage')
+        method(name: 'when', type: 'Object', params: [body: 'Closure'], doc: 'When expression')
         method(name: 'post', type: 'Object', params: [body: 'Closure'], doc: 'Post actions can be executed on a per-stage basis as well')
+        method(name: 'parallel', type: 'Object', params: [body: 'Closure'], doc: 'Run task in parallel')
     }
 
     // Only inside steps
     if (enclosingCall("steps") || enclosingCall("always") || enclosingCall("success") ||
-            enclosingCall("failure") || enclosingCall("unstable") || enclosingCall("changed")) {
+        enclosingCall("failure") || enclosingCall("unstable") || enclosingCall("changed")) {
         method(name: 'timestamp', type: 'Object', params: [body: 'Closure'], doc: 'Timestamps')
         method(name: 'bat', type: 'Object', params: [script: 'java.lang.String'], doc: 'Windows Batch Script')
         method(name: 'bat', type: 'Object', namedParams: [parameter(name: 'script', type: 'java.lang.String'), parameter(name: 'encoding', type: 'java.lang.String'), parameter(name: 'returnStatus', type: 'boolean'), parameter(name: 'returnStdout', type: 'boolean'),], doc: 'Windows Batch Script')
@@ -203,7 +226,6 @@ contributor(closures) {
         method(name: 'withDockerContainer', type: 'Object', params: [body: Closure], namedParams: [parameter(name: 'image', type: 'java.lang.String'), parameter(name: 'args', type: 'java.lang.String'), parameter(name: 'toolName', type: 'java.lang.String'),], doc: 'Run build steps inside a Docker container')
         method(name: 'withDockerRegistry', type: 'Object', params: [registry: Map, body: 'Closure'], doc: 'Advanced/Deprecated Sets up Docker registry endpoint')
         method(name: 'withDockerServer', type: 'Object', params: [server: Map, body: 'Closure'], doc: 'Advanced/Deprecated Sets up Docker server endpoint')
-        method(name: 'parallel', type: 'Object', params: [body: 'Map'], doc: 'Run taask in parallel')
     }
 
     // Post actions!
